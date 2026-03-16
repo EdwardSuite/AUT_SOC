@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    container_name: soc_postgres
+    environment:
+      POSTGRES_USER: soc_user
+      POSTGRES_PASSWORD: secure_password_change_me
+      POSTGRES_DB: soc_database
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - soc_network
+    restart: unless-stopped
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: soc_n8n
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: soc_database
+      DB_POSTGRESDB_USER: soc_user
+      DB_POSTGRESDB_PASSWORD: secure_password_change_me
+      N8N_HOST: 192.168.118.64
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - soc_network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: soc_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - soc_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  n8n_data:
+  ollama_data:
+
+networks:
+  soc_network:
+    driver: bridge

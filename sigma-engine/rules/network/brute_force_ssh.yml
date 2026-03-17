@@ -1,0 +1,33 @@
+title: SSH Brute Force Attack
+id: a7c0e6b2-1f4d-4e8a-9c3b-5d2f7a8e1b4c
+status: stable
+description: Detecta intentos de brute force sobre SSH basándose en múltiples intentos fallidos de autenticación desde la misma IP.
+references:
+  - https://attack.mitre.org/techniques/T1110/001/
+author: AUT_SOC Team
+date: 2026-03-17
+tags:
+  - attack.credential_access
+  - attack.T1110.001
+  - attack.persistence
+logsource:
+  category: network
+  product: qradar
+level: high
+detection:
+  selection:
+    EventName|contains:
+      - 'SSH Authentication Failed'
+      - 'Failed password'
+      - 'Invalid user'
+      - 'Authentication failure'
+      - 'ssh brute'
+  selection_port:
+    dst_port:
+      - '22'
+      - '5551'
+      - '2222'
+  condition: selection or selection_port
+falsepositives:
+  - Usuarios legítimos olvidando contraseña
+  - Herramientas de monitoreo

@@ -1,0 +1,42 @@
+title: Potential C2 Beaconing Activity
+id: c4e8a2f1-3b6d-4c9e-7f2a-8d1b5e3c6a9f
+status: stable
+description: Detecta patrones de comunicación hacia servidores de Command & Control conocidos o comportamiento de beacon (conexiones periódicas regulares a IP externa).
+references:
+  - https://attack.mitre.org/techniques/T1071/
+  - https://attack.mitre.org/techniques/T1071/001/
+author: AUT_SOC Team
+date: 2026-03-17
+tags:
+  - attack.command_and_control
+  - attack.T1071
+  - attack.T1071.001
+  - attack.exfiltration
+logsource:
+  category: network
+  product: qradar
+level: high
+detection:
+  selection_category:
+    EventName|contains:
+      - 'C2'
+      - 'Command and Control'
+      - 'Botnet'
+      - 'Malware Communication'
+      - 'Beaconing'
+      - 'beacon'
+  selection_dns:
+    EventName|contains:
+      - 'DNS Tunneling'
+      - 'DGA Domain'
+      - 'Fast Flux'
+      - 'Domain Generation'
+  selection_protocols:
+    EventName|contains:
+      - 'IRC Communication'
+      - 'Suspicious HTTP POST'
+      - 'Encrypted Channel'
+  condition: selection_category or selection_dns or selection_protocols
+falsepositives:
+  - Aplicaciones legítimas con actualizaciones automáticas
+  - Software de monitoreo remoto autorizado

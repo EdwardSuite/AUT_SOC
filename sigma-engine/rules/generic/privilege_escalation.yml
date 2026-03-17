@@ -1,0 +1,45 @@
+title: Privilege Escalation Attempt
+id: f7b1d5c4-6e9a-7f2b-0c5d-1a4e8f6b9d2c
+status: stable
+description: Detecta intentos de escalación de privilegios incluyendo uso de sudo, su, técnicas de bypass de UAC, y exploits de escalación conocidos.
+references:
+  - https://attack.mitre.org/techniques/T1548/
+  - https://attack.mitre.org/techniques/T1548/001/
+  - https://attack.mitre.org/techniques/T1548/002/
+author: AUT_SOC Team
+date: 2026-03-17
+tags:
+  - attack.privilege_escalation
+  - attack.T1548
+  - attack.T1548.001
+  - attack.T1548.002
+  - attack.T1134
+logsource:
+  category: generic
+  product: qradar
+level: high
+detection:
+  selection_category:
+    EventName|contains:
+      - 'Privilege Escalation'
+      - 'UAC Bypass'
+      - 'Sudo Abuse'
+      - 'Root Exploit'
+      - 'SUID Abuse'
+      - 'privilege escalation'
+  selection_tokens:
+    EventName|contains:
+      - 'Token Impersonation'
+      - 'Access Token Manipulation'
+      - 'SeDebugPrivilege'
+      - 'SeImpersonatePrivilege'
+  selection_linux:
+    EventName|contains:
+      - 'Setuid Binary'
+      - 'Sudo Command Execution'
+      - 'NOPASSWD sudo'
+      - 'sudoers modification'
+  condition: selection_category or selection_tokens or selection_linux
+falsepositives:
+  - Administradores usando sudo legítimamente
+  - Scripts de automatización autorizados

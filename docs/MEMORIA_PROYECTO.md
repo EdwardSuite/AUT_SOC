@@ -112,13 +112,14 @@ Normalize → MD5 Hash → Dedup Check
 
 #### 🔴 PRIORIDAD ALTA
 
-**2.1.A - Motor de Reglas Sigma Ligero**
-- Script Python que carga reglas `.yml` de SigmaHQ
-- Se ejecuta vía nodo "Execute Command" en N8N
-- Evalúa el evento normalizado contra reglas Sigma
-- Retorna: matches encontrados, técnicas MITRE, severidad sugerida
-- Ubicación: `/opt/docker/sigma-engine/`
-- Estado: ⬜ Pendiente
+**2.1.A - Motor de Reglas Sigma**
+- FastAPI microservicio en puerto 8745 (`sigma-engine/sigma_api.py`)
+- Motor de matching completo con AND/OR/NOT, wildcards, modificadores (`sigma_matcher.py`)
+- 10 reglas curadas + descarga automática de SigmaHQ en setup
+- Nodos N8N listos para importar (`sigma-engine/n8n_sigma_nodes.json`)
+- `setup.sh` + systemd service para deploy en servidor
+- **Pendiente: ejecutar setup.sh en 192.168.118.64 y agregar nodos en N8N**
+- Estado: ✅ CÓDIGO COMPLETO — ⬜ DEPLOY EN SERVIDOR PENDIENTE
 
 **2.1.B - Mapeo MITRE ATT&CK**
 - Enriquecer cada alerta con táctica/técnica MITRE
@@ -184,6 +185,7 @@ Normalize → MD5 Hash → Dedup Check
 | 2026-03-16 | Documentación v2.0 | README + N8N_WORKFLOW.md |
 | 2026-03-17 | Análisis DetectFlow & Sigma | Plan Fase 2.1 definido |
 | 2026-03-17 | Creación MEMORIA_PROYECTO.md | Este documento |
+| 2026-03-17 | **Sigma Engine completo (2.1.A)** | sigma_api.py + sigma_matcher.py + 10 reglas + setup.sh + n8n_sigma_nodes.json |
 
 ---
 

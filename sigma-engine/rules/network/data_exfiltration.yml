@@ -1,0 +1,42 @@
+title: Potential Data Exfiltration
+id: d5f9b3a2-4c7e-5d0f-8a3b-9e2c6d4f7b0a
+status: stable
+description: Detecta posible exfiltración de datos basándose en transferencias de gran volumen hacia IPs externas o uso de protocolos no habituales para transferencia de datos.
+references:
+  - https://attack.mitre.org/techniques/T1041/
+  - https://attack.mitre.org/techniques/T1048/
+author: AUT_SOC Team
+date: 2026-03-17
+tags:
+  - attack.exfiltration
+  - attack.T1041
+  - attack.T1048
+  - attack.T1567
+logsource:
+  category: network
+  product: qradar
+level: high
+detection:
+  selection_category:
+    EventName|contains:
+      - 'Data Exfiltration'
+      - 'Large Data Transfer'
+      - 'Unusual Upload'
+      - 'Excessive Outbound'
+      - 'exfiltration'
+  selection_dns_exfil:
+    EventName|contains:
+      - 'DNS Exfiltration'
+      - 'Long DNS Query'
+      - 'DNS Data Transfer'
+  selection_cloud:
+    EventName|contains:
+      - 'Unauthorized Cloud Upload'
+      - 'Dropbox Upload'
+      - 'Google Drive Upload'
+      - 'Pastebin'
+      - 'Mega.nz'
+  condition: selection_category or selection_dns_exfil or selection_cloud
+falsepositives:
+  - Backups legítimos a nube
+  - Transferencias autorizadas de archivos grandes

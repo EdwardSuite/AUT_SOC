@@ -1,0 +1,38 @@
+title: Network Port Scanning Activity
+id: b3d7f1a9-2e5c-4f0b-8a1d-6e3c9b2f4d7e
+status: stable
+description: Detecta actividad de escaneo de puertos hacia múltiples destinos o puertos, indicativo de reconocimiento de red.
+references:
+  - https://attack.mitre.org/techniques/T1046/
+author: AUT_SOC Team
+date: 2026-03-17
+tags:
+  - attack.discovery
+  - attack.T1046
+  - attack.reconnaissance
+logsource:
+  category: network
+  product: qradar
+level: medium
+detection:
+  selection_category:
+    EventName|contains:
+      - 'Port Scan'
+      - 'Network Scan'
+      - 'SYN Scan'
+      - 'Nmap'
+      - 'port scanning'
+  selection_offense:
+    offense_type|contains:
+      - 'Scan'
+      - 'Recon'
+      - 'Discovery'
+  filter_internal:
+    src_ip|contains:
+      - '192.168.'
+      - '10.'
+      - '172.16.'
+  condition: (selection_category or selection_offense) and not filter_internal
+falsepositives:
+  - Herramientas de auditoría de seguridad internas
+  - Vulnerability scanners autorizados (Nessus, OpenVAS)

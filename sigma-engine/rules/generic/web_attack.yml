@@ -1,0 +1,55 @@
+title: Web Application Attack
+id: c3e4a5b6-9d0f-1a2b-3c4d-5e6f7a8b9c0d
+status: stable
+description: Detecta ataques contra aplicaciones web incluyendo SQL Injection, XSS, Path Traversal, Command Injection y ataques de inclusión de archivos.
+references:
+  - https://attack.mitre.org/techniques/T1190/
+  - https://owasp.org/www-project-top-ten/
+author: AUT_SOC Team
+date: 2026-03-17
+tags:
+  - attack.initial_access
+  - attack.T1190
+  - attack.T1059
+logsource:
+  category: network
+  product: qradar
+level: high
+detection:
+  selection_sqli:
+    EventName|contains:
+      - 'SQL Injection'
+      - 'SQLi'
+      - 'UNION SELECT'
+      - "' OR '1'='1"
+      - 'sqlmap'
+  selection_xss:
+    EventName|contains:
+      - 'Cross-Site Scripting'
+      - 'XSS'
+      - '<script>'
+      - 'javascript:'
+  selection_path:
+    EventName|contains:
+      - 'Path Traversal'
+      - 'Directory Traversal'
+      - '../../../'
+      - '%2e%2e%2f'
+      - 'LFI'
+      - 'RFI'
+  selection_cmd:
+    EventName|contains:
+      - 'Command Injection'
+      - 'OS Command'
+      - 'RCE'
+      - 'Remote Code Execution'
+      - 'webshell'
+      - 'Web Shell'
+  selection_qradar:
+    category|contains:
+      - 'Web Application Attack'
+      - 'Application Attack'
+  condition: selection_sqli or selection_xss or selection_path or selection_cmd or selection_qradar
+falsepositives:
+  - Herramientas de vulnerability scanning autorizadas (Burp Suite en pentesting)
+  - WAF testing interno

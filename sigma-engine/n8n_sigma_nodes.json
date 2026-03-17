@@ -1,0 +1,93 @@
+{
+  "_description": "Nodos N8N para integrar el Sigma Engine en el workflow SOC Pipeline v2",
+  "_instrucciones": "Importar estos nodos en el workflow UkEdz3PlAeB5HgI2 después del nodo 'Normalize Data (JS)', antes de 'Dynamic Scoring'",
+  "_version": "2.1.0",
+  "_doc": "https://github.com/EdwardSuite/AUT_SOC/docs/MEMORIA_PROYECTO.md",
+  "nodes": [
+    {
+      "id": "sigma-evaluate-node",
+      "name": "Sigma Engine - Evaluate Event",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.118.64:8745/evaluate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ event: { EventName: $json.event_name || $json.EventName || $json.offense_type || '', src_ip: $json.src_ip || $json.source_ip || '', dst_ip: $json.dst_ip || $json.destination_ip || '', dst_port: String($json.dst_port || $json.destination_port || ''), category: $json.category || $json.qradar_category || '', severity: String($json.severity || ''), username: $json.username || $json.user || '', description: $json.description || $json.message || '', hostname: $json.hostname || $json.src_hostname || '' } }) }}",
+        "options": {
+          "timeout": 10000,
+          "response": {
+            "response": {
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "continueOnFail": true,
+      "notes": "Llama al Sigma Engine con el evento normalizado. Si falla, el pipeline continúa sin datos Sigma."
+    },
+    {
+      "id": "sigma-merge-node",
+      "name": "Sigma - Merge Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 300],
+      "parameters": {
+        "jsCode": "// Nodo: Sigma - Merge Results\n// Combina el resultado del Sigma Engine con los datos del evento original\n// y prepara el contexto para el Dynamic Scoring y el prompt de IA\n\nconst originalEvent = $('Normalize Data (JS)').item.json;\nconst sigmaResult = $input.item.json;\n\n// Verificar si el Sigma Engine respondió correctamente\nconst sigmaOk = sigmaResult && typeof sigmaResult.sigma_matched !== 'undefined';\n\n// Valores por defecto si Sigma Engine no respondió\nconst sigmaData = sigmaOk ? {\n  sigma_matched: sigmaResult.sigma_matched,\n  sigma_match_count: sigmaResult.match_count || 0,\n  sigma_highest_severity: sigmaResult.highest_severity || 'none',\n  sigma_risk_score: sigmaResult.sigma_risk_score || 0,\n  sigma_mitre_tactics: sigmaResult.mitre_tactics || [],\n  sigma_mitre_techniques: sigmaResult.mitre_techniques || [],\n  sigma_tags: sigmaResult.sigma_tags || [],\n  sigma_context_summary: sigmaResult.sigma_context_summary || 'Motor Sigma no disponible',\n  sigma_rules_evaluated: sigmaResult.rules_evaluated || 0,\n  sigma_evaluation_ms: sigmaResult.evaluation_time_ms || 0,\n  sigma_top_matches: (sigmaResult.matches || []).slice(0, 3).map(m => ({\n    title: m.rule_title,\n    severity: m.severity,\n    techniques: m.mitre_techniques\n  }))\n} : {\n  sigma_matched: false,\n  sigma_match_count: 0,\n  sigma_highest_severity: 'none',\n  sigma_risk_score: 0,\n  sigma_mitre_tactics: [],\n  sigma_mitre_techniques: [],\n  sigma_tags: [],\n  sigma_context_summary: 'Motor Sigma no disponible',\n  sigma_rules_evaluated: 0,\n  sigma_evaluation_ms: 0,\n  sigma_top_matches: []\n};\n\n// Calcular score bonus por Sigma (para el Dynamic Scoring)\nconst SIGMA_SEVERITY_BONUS = {\n  'none': 0,\n  'informational': 2,\n  'low': 10,\n  'medium': 20,\n  'high': 35,\n  'critical': 50\n};\n\nconst sigmaScoreBonus = SIGMA_SEVERITY_BONUS[sigmaData.sigma_highest_severity] || 0;\n\n// Construir el evento enriquecido\nconst enrichedEvent = {\n  ...originalEvent,\n  ...sigmaData,\n  sigma_score_bonus: sigmaScoreBonus,\n  // Flag de prioridad para acelerar análisis críticos\n  sigma_priority: sigmaData.sigma_highest_severity === 'critical' || \n                  sigmaData.sigma_mitre_techniques.length > 2\n};\n\nreturn { json: enrichedEvent };"
+      },
+      "notes": "Combina respuesta del Sigma Engine con el evento original y calcula bonus de scoring."
+    },
+    {
+      "id": "sigma-health-check",
+      "name": "Sigma Health Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 100],
+      "parameters": {
+        "method": "GET",
+        "url": "http://192.168.118.64:8745/health",
+        "options": {
+          "timeout": 3000,
+          "response": {
+            "response": {
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "continueOnFail": true,
+      "notes": "Health check del Sigma Engine. Ejecutar al inicio del pipeline junto con el health check del servidor."
+    }
+  ],
+  "connections_to_add": {
+    "description": "Conexiones a agregar en el workflow",
+    "after": "Normalize Data (JS)",
+    "before": "Dynamic Scoring (Fase 3)",
+    "flow": [
+      "Normalize Data (JS) → Sigma Engine - Evaluate Event",
+      "Sigma Engine - Evaluate Event → Sigma - Merge Results",
+      "Sigma - Merge Results → Dynamic Scoring (Fase 3)"
+    ]
+  },
+  "dynamic_scoring_update": {
+    "description": "Código a agregar/modificar en el nodo Dynamic Scoring (Fase 3)",
+    "note": "Añadir estas líneas al inicio del scoring para incluir el bonus de Sigma",
+    "code_snippet": "// === SIGMA INTEGRATION (Fase 2.1.A) ===\nconst sigmaBonus = $json.sigma_score_bonus || 0;\nconst sigmaMitreCount = ($json.sigma_mitre_techniques || []).length;\nconst mitreTechBonus = Math.min(sigmaMitreCount * 5, 25); // Max 25 puntos por técnicas MITRE\n\n// Sumar al score base\nlet baseScore = /* ... score existente ... */ 0;\nbaseScore = Math.min(100, baseScore + sigmaBonus + mitreTechBonus);\n// ==========================================="
+  },
+  "ai_prompt_update": {
+    "description": "Texto a agregar en el nodo 'Build AI Prompt v2' para incluir contexto Sigma",
+    "template_addition": "=== ANÁLISIS SIGMA (Reglas de Detección) ===\n{{ $json.sigma_context_summary }}\n\nMITRE ATT&CK Detectado:\n- Tácticas: {{ ($json.sigma_mitre_tactics || []).join(', ') || 'Ninguna' }}\n- Técnicas: {{ ($json.sigma_mitre_techniques || []).join(', ') || 'Ninguna' }}\n================================================\n",
+    "placement": "Agregar después del bloque de enriquecimiento externo y antes de la instrucción de análisis al LLM"
+  }
+}

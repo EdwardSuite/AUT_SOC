@@ -1,0 +1,44 @@
+title: Insider Threat Indicators
+id: d4f5b6c7-0e1a-2b3c-4d5e-6f7a8b9c0d1e
+status: experimental
+description: Detecta comportamientos anómalos de usuarios internos que pueden indicar amenaza interna, incluyendo acceso masivo a datos, acceso fuera de horario, y descarga inusual de información.
+references:
+  - https://attack.mitre.org/techniques/T1078/
+  - https://attack.mitre.org/techniques/T1530/
+author: AUT_SOC Team
+date: 2026-03-17
+tags:
+  - attack.persistence
+  - attack.T1078
+  - attack.collection
+  - attack.T1530
+  - attack.exfiltration
+logsource:
+  category: generic
+  product: qradar
+level: medium
+detection:
+  selection_access:
+    EventName|contains:
+      - 'Abnormal Data Access'
+      - 'Unusual Access Pattern'
+      - 'Mass Download'
+      - 'Bulk File Access'
+      - 'After Hours Access'
+  selection_policy:
+    EventName|contains:
+      - 'Policy Violation'
+      - 'DLP Alert'
+      - 'Data Loss Prevention'
+      - 'USB Device'
+      - 'Unauthorized Device'
+  selection_account:
+    EventName|contains:
+      - 'Dormant Account'
+      - 'Account Reactivation'
+      - 'Unusual Login Time'
+      - 'Geographic Anomaly'
+  condition: selection_access or selection_policy or selection_account
+falsepositives:
+  - Empleados trabajando en horario extendido
+  - Proyectos que requieren acceso masivo a datos

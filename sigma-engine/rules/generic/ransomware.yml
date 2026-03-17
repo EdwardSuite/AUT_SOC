@@ -1,0 +1,43 @@
+title: Ransomware Activity Detection
+id: a1c2e3f4-7b8d-9e0a-1b2c-3d4e5f6a7b8c
+status: stable
+description: Detecta indicadores de actividad de ransomware incluyendo cifrado masivo de archivos, modificación de shadow copies, y comunicaciones conocidas de ransomware.
+references:
+  - https://attack.mitre.org/techniques/T1486/
+  - https://attack.mitre.org/techniques/T1490/
+author: AUT_SOC Team
+date: 2026-03-17
+tags:
+  - attack.impact
+  - attack.T1486
+  - attack.T1490
+  - attack.T1489
+logsource:
+  category: generic
+  product: qradar
+level: critical
+detection:
+  selection_category:
+    EventName|contains:
+      - 'Ransomware'
+      - 'File Encryption'
+      - 'Mass File Modification'
+      - 'Crypto Locker'
+  selection_shadow:
+    EventName|contains:
+      - 'Shadow Copy Deletion'
+      - 'VSS Delete'
+      - 'vssadmin delete'
+      - 'wbadmin delete'
+      - 'bcdedit'
+  selection_extensions:
+    EventName|contains:
+      - '.encrypted'
+      - '.locked'
+      - '.crypto'
+      - 'DECRYPT_INSTRUCTION'
+      - 'HOW_TO_DECRYPT'
+      - 'YOUR_FILES'
+  condition: selection_category or selection_shadow or selection_extensions
+falsepositives:
+  - Herramientas de cifrado legítimas (VeraCrypt, BitLocker con actividad inusual)

@@ -1,0 +1,46 @@
+title: Lateral Movement Detection
+id: e6a0c4b3-5d8f-6e1a-9b4c-0f3d7e5a8c1b
+status: stable
+description: Detecta movimiento lateral en la red mediante protocolos administrativos como SMB, RDP, WMI o PsExec desde hosts que no son administradores conocidos.
+references:
+  - https://attack.mitre.org/techniques/T1021/
+  - https://attack.mitre.org/techniques/T1021/001/
+  - https://attack.mitre.org/techniques/T1021/002/
+author: AUT_SOC Team
+date: 2026-03-17
+tags:
+  - attack.lateral_movement
+  - attack.T1021
+  - attack.T1021.001
+  - attack.T1021.002
+  - attack.T1570
+logsource:
+  category: network
+  product: qradar
+level: high
+detection:
+  selection_category:
+    EventName|contains:
+      - 'Lateral Movement'
+      - 'Pass the Hash'
+      - 'Pass the Ticket'
+      - 'Remote Execution'
+      - 'PsExec'
+      - 'WMI Remote'
+  selection_protocols:
+    EventName|contains:
+      - 'SMB Authentication'
+      - 'RDP Login'
+      - 'WinRM'
+      - 'Impacket'
+  selection_ports:
+    dst_port:
+      - '445'
+      - '3389'
+      - '5985'
+      - '5986'
+      - '135'
+  condition: selection_category or selection_protocols
+falsepositives:
+  - Administradores de sistemas realizando tareas legítimas
+  - Software de gestión remota autorizado (SCCM, Ansible)

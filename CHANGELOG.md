@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.3.0] - 2026-03-17
+
+### Added - Fase 2.1.E: Playbook Engine (Automated Response)
+- **Playbook Engine** - Microservicio FastAPI (puerto 8748) para respuesta automatizada
+  - `playbook_engine.py`: 6 playbooks con pasos, SLA y acciones automáticas
+    - BRUTE_FORCE (SLA 30min), MALWARE (SLA 15min), DATA_EXFIL (SLA 15min)
+    - KILL_CHAIN (SLA 10min), LATERAL_SPREAD (SLA 20min), GENERIC_HIGH (SLA 60min)
+  - Auto-selección del playbook según patrón detectado (Sigma + IOC + Correlación)
+  - Notificación Telegram estructurada con pasos inmediatos y contexto completo
+  - Notas automáticas en QRadar offenses vía API
+  - Tabla `playbook_executions` en PostgreSQL con tracking de SLA
+- **N8N workflow actualizado** (56 nodos):
+  - `IF: Playbook Needed?` en paralelo con `Is Critical Alert?`
+  - Condición: `final_score >= 75 OR correlation_triggered OR ioc_risk_score >= 70`
+- **deploy_server.sh**: instala los 4 microservicios + backup en un solo comando
+
 ## [2.2.0] - 2026-03-17
 
 ### Added - Fase 2.1.D: Correlation Engine (Multi-Event Pattern Detection)

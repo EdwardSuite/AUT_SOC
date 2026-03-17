@@ -151,7 +151,7 @@ Normalize → MD5 Hash → Dedup Check
   - `playbook_malware.json` → cuarentena endpoint + ticket urgente
   - `playbook_data_exfil.json` → bloqueo red + escalación inmediata
 - Trigger: scoring > threshold + categoría específica
-- Estado: 🔄 En desarrollo
+- Estado: ✅ COMPLETO — puerto 8748, 6 playbooks, integrado en N8N (56 nodos)
 
 **2.1.F - Dashboard NocoDB Mejorado**
 - Aprovechar NocoDB en puerto 8080 (ya activo)
@@ -193,6 +193,9 @@ Normalize → MD5 Hash → Dedup Check
 | 2026-03-17 | **Correlation Engine (2.1.D)** | correlation_engine.py + correlation_api.py, 5 patrones, puerto 8747 |
 | 2026-03-17 | **VirusTotal condicional** | IF node en N8N, skip en low/medium sin IOC |
 | 2026-03-17 | **N8N 54 nodos** | Pipeline completo con Sigma+IOC+Correlación integrados |
+| 2026-03-17 | **Playbook Engine (2.1.E)** | playbook_engine.py + playbook_api.py, 6 playbooks, puerto 8748 |
+| 2026-03-17 | **N8N 56 nodos** | IF: Playbook Needed? + Playbook Engine - Execute integrados |
+| 2026-03-17 | **deploy_server.sh v2** | Script único para 4 microservicios + backup |
 
 ---
 
@@ -232,4 +235,4 @@ Al iniciar una nueva sesión sobre este proyecto:
 
 ---
 
-*Última actualización: 2026-03-17 sesión 2 | Por: Claude Code (Anthropic)*
+*Última actualización: 2026-03-17 sesión 3 | Por: Claude Code (Anthropic)*

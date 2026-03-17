@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.2.0] - 2026-03-17
+
+### Added - Fase 2.1.D: Correlation Engine (Multi-Event Pattern Detection)
+- **Correlation Engine** - Microservicio FastAPI (puerto 8747) para detección de patrones de ataque
+  - `correlation_engine.py`: Motor de correlación sobre PostgreSQL con ventanas de tiempo
+  - 5 patrones detectados: BRUTE_FORCE, PORT_SCAN, LATERAL_SPREAD, KILL_CHAIN, C2_BEACONING
+  - Genera "Super Alertas" cuando detecta secuencias sospechosas
+  - Aporta: `correlation_triggered`, `correlation_risk_bonus`, `correlation_summary` al pipeline
+  - Limpieza automática de eventos de correlación (retención 3 días)
+- **Sistema de Backup automático** - `scripts/backup_n8n.sh` + `scripts/setup_backup.sh`
+  - Backup diario 03:00 AM de: N8N data volume + PostgreSQL dump + microservicios
+  - Rotación automática (retención 7 días) en `/opt/backups/aut_soc/`
+  - Manifiesto de cada backup con tamaños y resultado
+- **VirusTotal condicional** - Nodo IF en N8N que salta VirusTotal en alertas low/medium sin IOC
+  - Condición: `severity == high/critical` OR `ioc_found == true`
+  - Reducción ~70% de llamadas a la API de VirusTotal
+- **N8N workflow actualizado** (54 nodos):
+  - Pipeline completo: Normalize → Sigma → IOC → Correlation → MD5 → Enrich → Scoring → LLM
+  - Dynamic Scoring acumula bonuses de Sigma + IOC + Correlación
+  - Build AI Prompt incluye contexto Sigma, MITRE, IOC y correlación
+
 ## [2.1.0] - 2026-03-17
 
 ### Added - Fase 2.1.C: IOC Engine (abuse.ch + ThreatFox)

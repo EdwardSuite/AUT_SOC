@@ -88,7 +88,7 @@ Normalize → MD5 Hash → Dedup Check
 
 ## 🚧 FASE 2.1 - EN DESARROLLO
 
-**Estado**: 🔄 En planificación (2026-03-17)
+**Estado**: 🔄 En ejecución (2026-03-17)
 **Objetivo**: Integrar capacidades de detección avanzada inspiradas en proyectos de referencia
 
 ### Proyectos de referencia analizados:
@@ -143,7 +143,7 @@ Normalize → MD5 Hash → Dedup Check
   - Ej: alert tipo "recon" seguida de "lateral movement" = kill chain
 - Usar PostgreSQL para ventanas de tiempo
 - Generar "Super Alert" cuando se detecta patrón
-- Estado: ⬜ Pendiente
+- Estado: ✅ COMPLETO — puerto 8747, 5 patrones, integrado en N8N
 
 **2.1.E - Playbooks de Respuesta Automatizada**
 - Sub-workflows N8N según tipo de amenaza:
@@ -151,7 +151,7 @@ Normalize → MD5 Hash → Dedup Check
   - `playbook_malware.json` → cuarentena endpoint + ticket urgente
   - `playbook_data_exfil.json` → bloqueo red + escalación inmediata
 - Trigger: scoring > threshold + categoría específica
-- Estado: ⬜ Pendiente
+- Estado: 🔄 En desarrollo
 
 **2.1.F - Dashboard NocoDB Mejorado**
 - Aprovechar NocoDB en puerto 8080 (ya activo)
@@ -189,6 +189,10 @@ Normalize → MD5 Hash → Dedup Check
 | 2026-03-17 | **MITRE ATT&CK Enricher (2.1.B)** | mitre_enricher.py + endpoints /mitre/* en sigma_api.py |
 | 2026-03-17 | **IOC Engine completo (2.1.C)** | ioc_api.py + ioc_fetcher.py + ioc_checker.py + setup.sh (puerto 8746) |
 | 2026-03-17 | **deploy_server.sh** | Script unico para instalar todo en el servidor |
+| 2026-03-17 | **Backup automático (scripts/)** | backup_n8n.sh + setup_backup.sh, cron 03:00 AM |
+| 2026-03-17 | **Correlation Engine (2.1.D)** | correlation_engine.py + correlation_api.py, 5 patrones, puerto 8747 |
+| 2026-03-17 | **VirusTotal condicional** | IF node en N8N, skip en low/medium sin IOC |
+| 2026-03-17 | **N8N 54 nodos** | Pipeline completo con Sigma+IOC+Correlación integrados |
 
 ---
 
@@ -200,7 +204,7 @@ Normalize → MD5 Hash → Dedup Check
 | 2 | Modelos en servidor son :latest/:7b, no :14b | Capacidad IA menor | ⚠️ Evaluar upgrade |
 | 3 | Sin rate limiting en SSH (puerto 5551) | Riesgo de brute force | ⚠️ Pendiente |
 | 4 | APIs externas sin timeout/retry | Pipeline puede colgarse | ⚠️ Pendiente |
-| 5 | Sin backup de n8n database.sqlite | Pérdida de workflows | 🔴 Urgente |
+| 5 | Sin backup de n8n database.sqlite | Pérdida de workflows | ✅ Resuelto (scripts/backup_n8n.sh) |
 
 ---
 
@@ -228,4 +232,4 @@ Al iniciar una nueva sesión sobre este proyecto:
 
 ---
 
-*Última actualización: 2026-03-17 | Por: Claude Code (Anthropic)*
+*Última actualización: 2026-03-17 sesión 2 | Por: Claude Code (Anthropic)*

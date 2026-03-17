@@ -1,25 +1,34 @@
 """
-sigma_api.py - API REST del Motor Sigma
-AUT_SOC - Fase 2.1.A
+sigma_api.py - API REST del Motor Sigma + MITRE ATT&CK Enricher
+AUT_SOC - Fase 2.1.A + 2.1.B
 
-FastAPI server que expone el motor Sigma como microservicio HTTP.
+FastAPI server que expone el motor Sigma y el enriquecedor MITRE como microservicio HTTP.
 N8N llama a este servicio vía HTTP Request node después de normalizar el evento.
 
-Endpoints:
-  POST /evaluate         - Evalúa un evento contra todas las reglas
-  GET  /health           - Health check
-  GET  /rules            - Lista reglas cargadas
-  GET  /reload           - Recarga reglas desde disco
-  GET  /stats            - Estadísticas del motor
+Endpoints Sigma (2.1.A):
+  POST /evaluate             - Evalúa un evento contra todas las reglas Sigma
+  GET  /health               - Health check
+  GET  /rules                - Lista reglas cargadas
+  POST /reload               - Recarga reglas desde disco (hot-reload)
+  GET  /stats                - Estadísticas del motor
+
+Endpoints MITRE ATT&CK (2.1.B):
+  GET  /mitre/technique/{id} - Info completa de una técnica MITRE
+  GET  /mitre/tactic/{name}  - Info completa de una táctica MITRE
+  POST /mitre/enrich         - Enriquece lista de técnicas con contexto completo
+  POST /mitre/download       - Descarga/actualiza base MITRE desde GitHub
+  GET  /mitre/stats          - Estadísticas de la base MITRE
 """
 
 import logging
+import threading
 import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Any, Optional
 from rules_loader import RulesLoader
+from mitre_enricher import MitreEnricher
 
 # ---------------------------------------------------------------------------
 # Configuración de logging
@@ -81,16 +90,25 @@ class EvaluateResponse(BaseModel):
 SEVERITY_ORDER = ["informational", "low", "medium", "high", "critical"]
 
 # ---------------------------------------------------------------------------
-# Instancia global del loader (se inicializa en el lifespan)
+# Instancias globales
 # ---------------------------------------------------------------------------
 loader = RulesLoader(rules_dir="./rules")
+mitre = MitreEnricher(cache_dir="./mitre_cache")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Cargar reglas al arrancar el servicio."""
+    """Cargar reglas y MITRE al arrancar el servicio."""
     count = loader.load_all()
     logger.info(f"✅ Sigma Engine listo - {count} reglas cargadas")
+    # Descargar MITRE ATT&CK en background si no hay cache
+    mitre_stats = mitre.get_stats()
+    if mitre_stats["extended_cache"] == 0:
+        logger.info("Descargando MITRE ATT&CK en background...")
+        thread = threading.Thread(target=mitre.download_mitre_data, daemon=True)
+        thread.start()
+    else:
+        logger.info(f"MITRE cache: {mitre_stats['extended_cache']} técnicas")
     yield
     logger.info("🛑 Sigma Engine apagado")
 
@@ -268,6 +286,65 @@ def evaluate_event(req: EvaluateRequest):
         rules_evaluated=len(rules_to_eval),
         evaluation_time_ms=round(elapsed_ms, 2),
     )
+
+
+# ---------------------------------------------------------------------------
+# Endpoints MITRE ATT&CK (Fase 2.1.B)
+# ---------------------------------------------------------------------------
+
+class MitreEnrichRequest(BaseModel):
+    techniques: list[str]
+    tactics: Optional[list[str]] = []
+
+
+@app.get("/mitre/technique/{tech_id}")
+def get_technique(tech_id: str):
+    """Retorna información completa de una técnica MITRE ATT&CK por ID."""
+    info = mitre.get_technique(tech_id)
+    if not info:
+        raise HTTPException(status_code=404, detail=f"Técnica {tech_id} no encontrada")
+    return info
+
+
+@app.get("/mitre/tactic/{tactic_name}")
+def get_tactic(tactic_name: str):
+    """Retorna información de una táctica MITRE ATT&CK por nombre."""
+    info = mitre.get_tactic(tactic_name)
+    if not info:
+        raise HTTPException(status_code=404, detail=f"Táctica '{tactic_name}' no encontrada")
+    return info
+
+
+@app.post("/mitre/enrich")
+def enrich_mitre(req: MitreEnrichRequest):
+    """
+    Enriquece una lista de técnicas y tácticas con información completa de MITRE ATT&CK.
+    Retorna además un resumen textual listo para incluir en el prompt del LLM.
+    """
+    enriched_techniques = mitre.enrich_techniques(req.techniques)
+    enriched_tactics = [mitre.get_tactic(t) for t in (req.tactics or []) if mitre.get_tactic(t)]
+    summary = mitre.build_attack_summary(req.tactics or [], req.techniques)
+
+    return {
+        "techniques": enriched_techniques,
+        "tactics": enriched_tactics,
+        "attack_summary": summary,
+        "technique_count": len(enriched_techniques),
+        "tactic_count": len(enriched_tactics),
+    }
+
+
+@app.post("/mitre/download")
+def download_mitre():
+    """Descarga/actualiza la base MITRE ATT&CK Enterprise desde GitHub (puede tardar ~10s)."""
+    count = mitre.download_mitre_data()
+    return {"status": "ok", "techniques_indexed": count}
+
+
+@app.get("/mitre/stats")
+def mitre_stats():
+    """Estadísticas de la base de datos MITRE ATT&CK."""
+    return mitre.get_stats()
 
 
 # ---------------------------------------------------------------------------

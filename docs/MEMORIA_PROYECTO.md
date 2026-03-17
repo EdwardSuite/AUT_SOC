@@ -186,6 +186,9 @@ Normalize → MD5 Hash → Dedup Check
 | 2026-03-17 | Análisis DetectFlow & Sigma | Plan Fase 2.1 definido |
 | 2026-03-17 | Creación MEMORIA_PROYECTO.md | Este documento |
 | 2026-03-17 | **Sigma Engine completo (2.1.A)** | sigma_api.py + sigma_matcher.py + 10 reglas + setup.sh + n8n_sigma_nodes.json |
+| 2026-03-17 | **MITRE ATT&CK Enricher (2.1.B)** | mitre_enricher.py + endpoints /mitre/* en sigma_api.py |
+| 2026-03-17 | **IOC Engine completo (2.1.C)** | ioc_api.py + ioc_fetcher.py + ioc_checker.py + setup.sh (puerto 8746) |
+| 2026-03-17 | **deploy_server.sh** | Script unico para instalar todo en el servidor |
 
 ---
 

@@ -2,6 +2,22 @@
 
 ## [2.1.0] - 2026-03-17
 
+### Added - Fase 2.1.C: IOC Engine (abuse.ch + ThreatFox)
+- **IOC Engine** - Microservicio FastAPI (puerto 8746) para verificación de IOCs en tiempo real
+  - `ioc_fetcher.py`: Descarga feeds de URLhaus, Feodo Tracker, MalwareBazaar, ThreatFox
+  - `ioc_checker.py`: Verificación de IPs, URLs, hashes, dominios contra base SQLite
+  - Auto-detección de tipo de IOC (IP/hash/URL/dominio) en `/check/auto`
+  - Verificación completa de evento N8N en una sola llamada `/check/event`
+  - Cron diario automático (02:00 AM) para actualización de feeds
+  - Aporta: `ioc_found`, `ioc_risk_score`, `ioc_risk_bonus`, `ioc_summary` al pipeline
+
+### Added - Fase 2.1.B: MITRE ATT&CK Enricher
+- **MitreEnricher** integrado en el Sigma Engine (puerto 8745)
+  - Base embebida: 35 técnicas + 14 tácticas de MITRE ATT&CK Enterprise
+  - Descarga automática en background del JSON oficial MITRE (700+ técnicas)
+  - Nuevos endpoints: `/mitre/technique/{id}`, `/mitre/tactic/{name}`, `/mitre/enrich`
+  - Genera `attack_summary` textual listo para incluir en el prompt del LLM
+
 ### Added - Fase 2.1.A: Motor de Reglas Sigma
 - **Sigma Engine** - Microservicio FastAPI (puerto 8745) que evalúa eventos contra reglas Sigma
   - Motor de matching implementado desde cero en Python (sigma_matcher.py)

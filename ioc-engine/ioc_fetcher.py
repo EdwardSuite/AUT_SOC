@@ -202,19 +202,39 @@ class IOCFetcher:
             "Accept": "application/json",
         }
 
-    def _get(self, url: str, timeout: int = 30) -> bytes:
+    def _get(self, url: str, timeout: int = 30, attempts: int = 3) -> bytes:
+        attempts = max(1, attempts)
         req = urllib.request.Request(url, headers=self.headers)
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return resp.read()
+        last_exception = None
+        for attempt in range(attempts):
+            try:
+                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    return resp.read()
+            except urllib.error.URLError as e:
+                last_exception = e
+                logger.warning(f"Error HTTP GET {url} (Intento {attempt + 1}/{attempts}): {e}")
+                if attempt < attempts - 1:
+                    time.sleep(2 ** attempt)
+        raise last_exception
 
-    def _post_json(self, url: str, data: dict, timeout: int = 30) -> dict:
+    def _post_json(self, url: str, data: dict, timeout: int = 30, attempts: int = 3) -> dict:
+        attempts = max(1, attempts)
         body = json.dumps(data).encode()
         req = urllib.request.Request(
             url, data=body,
             headers={**self.headers, "Content-Type": "application/json"}
         )
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read())
+        last_exception = None
+        for attempt in range(attempts):
+            try:
+                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    return json.loads(resp.read())
+            except urllib.error.URLError as e:
+                last_exception = e
+                logger.warning(f"Error HTTP POST {url} (Intento {attempt + 1}/{attempts}): {e}")
+                if attempt < attempts - 1:
+                    time.sleep(2 ** attempt)
+        raise last_exception
 
     # -------------------------------------------------------------------------
 
